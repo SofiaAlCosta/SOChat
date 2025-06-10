@@ -5,8 +5,9 @@ OBJ=obj
 
 all: chat
 
-chat: $(SRC)/main.c $(SRC)/chat.c
-	$(CC) $(CFLAGS) -o chat $(SRC)/main.c $(SRC)/chat.c
+
+chat: main.c chat.c
+        $(CC) $(CFLAGS) -o chat main.c chat.c
 
 clean:
-	rm -f chat
+        rm -f chat
