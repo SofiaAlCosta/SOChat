@@ -10,4 +10,4 @@ chat: main.c chat.c
     $(CC) $(CFLAGS) -o chat main.c chat.c
 
 clean:
-	rm -f chat
+	rm -f chat
