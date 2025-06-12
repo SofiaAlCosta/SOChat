@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <pthread.h>
 
 int fd_read, fd_write;
 char fifo_read[100], fifo_write[100];
@@ -13,9 +14,37 @@ void sair(int sig) {
     printf("\n[INFO] Encerrando o chat...\n");
     close(fd_read);
     close(fd_write);
+    unlink(fifo_read);
+    unlink(fifo_write);
     exit(0);
 }
 
+void* escrever(void *arg) {
+    char msg[MAX_MSG_LEN];
+    while (1) {
+        printf("[Tu] > ");
+        fflush(stdout);
+        if (fgets(msg, MAX_MSG_LEN, stdin) != NULL) {
+            write(fd_write, msg, strlen(msg));
+        }
+    }
+    return NULL;
+}
+
+void* ler(void *arg) {
+    char msg[MAX_MSG_LEN];
+    while (1) {
+        ssize_t n = read(fd_read, msg, MAX_MSG_LEN - 1);
+        if (n > 0) {
+            msg[n] = '\0';
+            printf("\n[Outro] > %s", msg);
+            printf("[Tu] > ");
+            fflush(stdout);
+        }
+        usleep(200000);
+    }
+    return NULL;
+} 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Uso: %s <meu_nome> <nome_destino>\n", argv[0]);
@@ -25,8 +54,8 @@ int main(int argc, char *argv[]) {
     char *me = argv[1];
     char *dest = argv[2];
 
-    snprintf(fifo_read, sizeof(fifo_read), "from_%s_to_%s", dest, me);
-    snprintf(fifo_write, sizeof(fifo_write), "from_%s_to_%s", me, dest);
+    snprintf(fifo_read, sizeof(fifo_read), "fifos/from_%s_to_%s", dest, me);
+    snprintf(fifo_write, sizeof(fifo_write), "fifos/from_%s_to_%s", me, dest);
 
     create_fifo(fifo_read);
     create_fifo(fifo_write);
@@ -43,32 +72,12 @@ int main(int argc, char *argv[]) {
 
     signal(SIGINT, sair);
 
-    pid_t pid = fork();
+    pthread_t th_esc, th_leit;
+    pthread_create(&th_esc, NULL, escrever, NULL);
+    pthread_create(&th_leit, NULL, ler, NULL);
 
-    if (pid == 0) {
-        // Escrita
-        char msg[MAX_MSG_LEN];
-        while (1) {
-            printf("[Tu] > ");
-            fflush(stdout);
-            if (fgets(msg, MAX_MSG_LEN, stdin) != NULL) {
-                write(fd_write, msg, strlen(msg));
-            }
-        }
-    } else {
-        // Leitura
-        char msg[MAX_MSG_LEN];
-        while (1) {
-            ssize_t n = read(fd_read, msg, MAX_MSG_LEN - 1);
-            if (n > 0) {
-                msg[n] = '\0';
-                printf("\n[%s]: %s", dest, msg);
-                printf("[Tu] > ");
-                fflush(stdout);
-            }
-            usleep(200000); // 200 ms
-        }
-    }
+    pthread_join(th_esc, NULL);
+    pthread_join(th_leit, NULL);
 
-    return 0;
+    return 0;
 }
