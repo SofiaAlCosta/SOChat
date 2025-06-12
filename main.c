@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
     printf("[INFO] Abrindo pipes...\n");
 
-    fd_read = open(fifo_read, O_RDONLY | O_NONBLOCK);
+    fd_read = open(fifo_read, O_RDONLY);
     fd_write = open(fifo_write, O_WRONLY);
 
     if (fd_read == -1 || fd_write == -1) {
