@@ -1,12 +1,11 @@
 CC = gcc
-CFLAGS = -Wall
-SRC = src
-OBJ = obj
+CFLAGS = -Wall -pthread
 
 all: chat
 
 chat: main.c chat.c
-	$(CC) $(CFLAGS) -o chat main.c chat.c
+        $(CC) $(CFLAGS) -o chat main.c chat.c
 
 clean:
-	rm -f chat
+        rm -f chat
+        rm -f fifos/from_*
